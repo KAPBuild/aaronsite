@@ -21,6 +21,17 @@ export default function BubblePopGame({ onBack }) {
     }, 20000) // 20 second game
   }
 
+  // Trigger confetti when game ends
+  useEffect(() => {
+    if (gameOver) {
+      confetti({
+        particleCount: 200,
+        spread: 100,
+        origin: { x: 0.5, y: 0.5 }
+      })
+    }
+  }, [gameOver])
+
   const generateBubbles = () => {
     const newBubbles = []
     for (let i = 0; i < 15; i++) {
@@ -38,11 +49,6 @@ export default function BubblePopGame({ onBack }) {
     setBubbles(prev => prev.filter(b => b.id !== id))
     setPops(prev => prev + 1)
     await playPopSound()
-    confetti({
-      particleCount: 40,
-      spread: 70,
-      origin: { x: Math.random(), y: Math.random() }
-    })
 
     // Add new bubble
     if (bubbles.length > 0) {
