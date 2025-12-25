@@ -215,15 +215,17 @@ export default function SimpleDrawingCanvas() {
   if (isFullscreen) {
     return (
       <div className="fixed inset-0 bg-white z-50 flex flex-col">
-        {/* Close Button */}
-        <button
-          onClick={() => setIsFullscreen(false)}
-          className="absolute top-4 right-4 text-slate-800 text-4xl hover:scale-110 transition-transform font-bold z-10"
-          title="Exit Fullscreen (or press Escape)"
-          aria-label="Close"
-        >
-          ✕
-        </button>
+        {/* Top Exit Bar */}
+        <div className="bg-red-600 p-2 flex items-center justify-between border-b-4 border-red-700">
+          <div className="text-white font-bold">Drawing Mode - Fullscreen</div>
+          <button
+            onClick={() => setIsFullscreen(false)}
+            className="bg-red-700 hover:bg-red-800 text-white text-2xl font-bold py-2 px-4 rounded transition-all hover:scale-110 active:scale-95"
+            title="Exit Fullscreen (or press Escape)"
+          >
+            ✕ EXIT
+          </button>
+        </div>
 
         {/* Toolbar */}
         <div className="bg-slate-800 p-4 border-b border-slate-700 overflow-y-auto max-h-24">
@@ -283,12 +285,6 @@ export default function SimpleDrawingCanvas() {
               <button onClick={redo} className="bg-slate-700 hover:bg-slate-600 text-cyan-300 px-3 py-1 rounded text-sm">↷ Redo</button>
               <button onClick={clearCanvas} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-bold">Clear</button>
               <button onClick={saveDrawing} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-bold">Save</button>
-              <button
-                onClick={() => setIsFullscreen(false)}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm font-bold"
-              >
-                Exit Fullscreen
-              </button>
             </div>
           </div>
         </div>
