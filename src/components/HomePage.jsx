@@ -43,7 +43,7 @@ export default function HomePage() {
         {/* Title */}
         <div className="text-center mb-8 pt-4">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-3">
-            Aaron's Gaming Lab
+            Aaron's Lab
           </h2>
           <p className="text-lg text-cyan-300">
             Games, Puzzles, and Creative Fun
