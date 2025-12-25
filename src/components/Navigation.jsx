@@ -2,44 +2,45 @@ import React from 'react'
 
 export default function Navigation({ currentPage, setCurrentPage }) {
   const navItems = [
-    { id: 'home', emoji: '🏠' },
-    { id: 'games', emoji: '🎮' },
-    { id: 'pokemon', emoji: '🔴' },
-    { id: 'hotwheels', emoji: '🏎️' },
-    { id: 'emulator', emoji: '🕹️' },
+    { id: 'home', emoji: '🏠', label: 'Home' },
+    { id: 'games', emoji: '🎮', label: 'Games' },
+    { id: 'puzzles', emoji: '🧩', label: 'Puzzles' },
+    { id: 'pokemon', emoji: '🔴', label: 'Pokemon' },
+    { id: 'hotwheels', emoji: '🏎️', label: 'Hot Wheels' },
   ]
 
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-gradient-to-r from-red-500 via-yellow-400 to-blue-500 shadow-2xl z-50 border-b-8 border-white">
+    <nav className="fixed top-0 left-0 right-0 bg-gradient-to-r from-slate-900 to-blue-900 shadow-2xl z-50 border-b border-cyan-500">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-24">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <button
             onClick={() => setCurrentPage('home')}
-            className="text-5xl hover:scale-125 transition-transform active:scale-95 drop-shadow-lg"
+            className="text-3xl hover:scale-110 transition-transform drop-shadow-lg"
           >
-            🧪
+            🎮
           </button>
 
-          {/* Nav Items - BIG BUTTONS FOR SMALL HANDS */}
-          <div className="flex gap-4 justify-center">
+          {/* Nav Items */}
+          <div className="flex gap-2 justify-center flex-1">
             {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setCurrentPage(item.id)}
-                className={`text-5xl p-3 rounded-2xl transition-all duration-200 transform hover:scale-120 active:scale-100 drop-shadow-lg ${
+                className={`px-4 py-2 rounded-lg transition-all text-sm md:text-base font-semibold ${
                   currentPage === item.id
-                    ? 'bg-white scale-125 shadow-2xl border-4 border-yellow-300'
-                    : 'hover:scale-110'
+                    ? 'bg-cyan-500 text-slate-900 shadow-lg'
+                    : 'bg-slate-800 text-cyan-300 hover:bg-slate-700'
                 }`}
+                title={item.label}
               >
-                {item.emoji}
+                <span className="inline md:hidden">{item.emoji}</span>
+                <span className="hidden md:inline">{item.emoji} {item.label}</span>
               </button>
             ))}
           </div>
 
-          {/* Spacer */}
-          <div className="w-20"></div>
+          <div className="w-12"></div>
         </div>
       </div>
     </nav>
