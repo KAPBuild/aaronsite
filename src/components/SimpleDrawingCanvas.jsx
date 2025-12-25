@@ -31,6 +31,20 @@ export default function SimpleDrawingCanvas() {
     saveToHistory(canvas)
   }, [isFullscreen])
 
+  // Handle Escape key to exit fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false)
+      }
+    }
+
+    if (isFullscreen) {
+      window.addEventListener('keydown', handleKeyDown)
+      return () => window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isFullscreen])
+
   const saveToHistory = (canvas) => {
     const newHistory = history.slice(0, historyStep + 1)
     newHistory.push(canvas.toDataURL())
@@ -201,6 +215,16 @@ export default function SimpleDrawingCanvas() {
   if (isFullscreen) {
     return (
       <div className="fixed inset-0 bg-white z-50 flex flex-col">
+        {/* Close Button */}
+        <button
+          onClick={() => setIsFullscreen(false)}
+          className="absolute top-4 right-4 text-slate-800 text-4xl hover:scale-110 transition-transform font-bold z-10"
+          title="Exit Fullscreen (or press Escape)"
+          aria-label="Close"
+        >
+          ✕
+        </button>
+
         {/* Toolbar */}
         <div className="bg-slate-800 p-4 border-b border-slate-700 overflow-y-auto max-h-24">
           <div className="space-y-3">
