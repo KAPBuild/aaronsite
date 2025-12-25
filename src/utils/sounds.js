@@ -2,6 +2,8 @@ import * as Tone from 'tone'
 
 // Initialize Tone.js
 let isInitialized = false
+const masterVolume = new Tone.Gain(0.1) // Very quiet - 10% volume
+masterVolume.connect(Tone.Destination)
 
 const initAudio = async () => {
   if (!isInitialized) {
@@ -10,90 +12,108 @@ const initAudio = async () => {
   }
 }
 
-// Pop sound (satisfying bubble pop)
+// Pop sound (quiet, subtle)
 export const playPopSound = async () => {
-  await initAudio()
-  const synth = new Tone.Synth({
-    oscillator: { type: 'triangle' },
-    envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.1 },
-  }).toDestination()
+  try {
+    await initAudio()
+    const synth = new Tone.Synth({
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.01, decay: 0.08, sustain: 0, release: 0.05 },
+    }).connect(masterVolume)
 
-  synth.triggerAttackRelease('C4', '0.1')
+    synth.triggerAttackRelease('A4', '0.08')
+  } catch (e) {
+    // Silently fail if audio fails
+  }
 }
 
 // Success/Win sound
 export const playWinSound = async () => {
-  await initAudio()
-  const synth = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: 'triangle' },
-    envelope: { attack: 0.005, decay: 0.2, sustain: 0, release: 0.1 },
-  }).toDestination()
+  try {
+    await initAudio()
+    const synth = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.01, decay: 0.15, sustain: 0, release: 0.08 },
+    }).connect(masterVolume)
 
-  synth.triggerAttackRelease(['G4', 'B4', 'D5'], '0.2')
+    synth.triggerAttackRelease(['G4', 'C5'], '0.15')
+  } catch (e) {}
 }
 
 // Ding sound (achievement)
 export const playDingSound = async () => {
-  await initAudio()
-  const synth = new Tone.Synth({
-    oscillator: { type: 'sine' },
-    envelope: { attack: 0.01, decay: 0.3, sustain: 0, release: 0.2 },
-  }).toDestination()
+  try {
+    await initAudio()
+    const synth = new Tone.Synth({
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.01, decay: 0.15, sustain: 0, release: 0.1 },
+    }).connect(masterVolume)
 
-  synth.triggerAttackRelease('E5', '0.3')
+    synth.triggerAttackRelease('E5', '0.15')
+  } catch (e) {}
 }
 
-// Error/Wrong sound (gentle, not harsh)
+// Error/Wrong sound (very subtle)
 export const playErrorSound = async () => {
-  await initAudio()
-  const synth = new Tone.Synth({
-    oscillator: { type: 'sawtooth' },
-    envelope: { attack: 0.01, decay: 0.15, sustain: 0, release: 0.1 },
-  }).toDestination()
+  try {
+    await initAudio()
+    const synth = new Tone.Synth({
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.05 },
+    }).connect(masterVolume)
 
-  synth.triggerAttackRelease('C3', '0.15')
+    synth.triggerAttackRelease('D3', '0.1')
+  } catch (e) {}
 }
 
-// Click sound (button press)
+// Click sound (button press) - very quiet
 export const playClickSound = async () => {
-  await initAudio()
-  const synth = new Tone.Synth({
-    oscillator: { type: 'square' },
-    envelope: { attack: 0.003, decay: 0.05, sustain: 0, release: 0.03 },
-  }).toDestination()
+  try {
+    await initAudio()
+    const synth = new Tone.Synth({
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.005, decay: 0.03, sustain: 0, release: 0.02 },
+    }).connect(masterVolume)
 
-  synth.triggerAttackRelease('A4', '0.05')
+    synth.triggerAttackRelease('B4', '0.03')
+  } catch (e) {}
 }
 
 // Whoosh sound (movement)
 export const playWhooshSound = async () => {
-  await initAudio()
-  const synth = new Tone.Synth({
-    oscillator: { type: 'triangle' },
-    envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 },
-  }).toDestination()
+  try {
+    await initAudio()
+    const synth = new Tone.Synth({
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.05 },
+    }).connect(masterVolume)
 
-  synth.triggerAttackRelease('F4', '0.2')
+    synth.triggerAttackRelease('F4', '0.1')
+  } catch (e) {}
 }
 
-// Bell sound (cheerful)
+// Bell sound (subtle)
 export const playBellSound = async () => {
-  await initAudio()
-  const synth = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: 'sine' },
-    envelope: { attack: 0.01, decay: 0.3, sustain: 0, release: 0.2 },
-  }).toDestination()
+  try {
+    await initAudio()
+    const synth = new Tone.Synth({
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 },
+    }).connect(masterVolume)
 
-  synth.triggerAttackRelease(['G5', 'D6'], '0.3')
+    synth.triggerAttackRelease('G5', '0.2')
+  } catch (e) {}
 }
 
 // Leveling up sound
 export const playLevelUpSound = async () => {
-  await initAudio()
-  const synth = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: 'triangle' },
-    envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 },
-  }).toDestination()
+  try {
+    await initAudio()
+    const synth = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.05 },
+    }).connect(masterVolume)
 
-  synth.triggerAttackRelease(['C4', 'E4', 'G4', 'C5'], '0.15')
+    synth.triggerAttackRelease(['C4', 'E4', 'G4'], '0.1')
+  } catch (e) {}
 }

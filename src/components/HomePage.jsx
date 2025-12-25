@@ -2,19 +2,33 @@ import React, { useState, useEffect } from 'react'
 import SimpleDrawingCanvas from './SimpleDrawingCanvas'
 
 export default function HomePage() {
-  const [showGreeting, setShowGreeting] = useState(true)
+  const [showGreeting, setShowGreeting] = useState(() => {
+    // Only show greeting once per session
+    const shown = sessionStorage.getItem('greetingShown')
+    return !shown
+  })
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowGreeting(false), 4000)
-    return () => clearTimeout(timer)
-  }, [])
+    if (showGreeting) {
+      sessionStorage.setItem('greetingShown', 'true')
+      const timer = setTimeout(() => setShowGreeting(false), 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [showGreeting])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 p-4">
       {/* Welcome message */}
       {showGreeting && (
         <div className="fixed inset-0 flex items-center justify-center z-40 bg-black/50 backdrop-blur">
-          <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl p-8 md:p-12 text-center max-w-2xl mx-4 shadow-2xl border-2 border-cyan-400">
+          <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl p-8 md:p-12 text-center max-w-2xl mx-4 shadow-2xl border-2 border-cyan-400 relative">
+            <button
+              onClick={() => setShowGreeting(false)}
+              className="absolute top-4 right-4 text-white text-3xl hover:scale-110 transition-transform font-bold"
+              aria-label="Close"
+            >
+              ✕
+            </button>
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-3">
               Welcome, Aaron! 🎮
             </h1>
