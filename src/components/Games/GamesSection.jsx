@@ -1,9 +1,6 @@
 import React, { useState } from 'react'
-import TapPopGame from './TapPopGame'
-import ColorMatchGame from './ColorMatchGame'
-import ShapeHuntGame from './ShapeHuntGame'
 import PatternGameGame from './PatternGame'
-import BubblePopGame from './BubblePopGame'
+import BaconHuntGame from './BaconHuntGame'
 
 export default function GamesSection() {
   const [selectedGame, setSelectedGame] = useState(null)
@@ -11,11 +8,8 @@ export default function GamesSection() {
   if (selectedGame) {
     return (
       <>
-        {selectedGame === 'tappop' && <TapPopGame onBack={() => setSelectedGame(null)} />}
-        {selectedGame === 'colormatch' && <ColorMatchGame onBack={() => setSelectedGame(null)} />}
-        {selectedGame === 'shapehunt' && <ShapeHuntGame onBack={() => setSelectedGame(null)} />}
         {selectedGame === 'pattern' && <PatternGameGame onBack={() => setSelectedGame(null)} />}
-        {selectedGame === 'bubblepop' && <BubblePopGame onBack={() => setSelectedGame(null)} />}
+        {selectedGame === 'baconhunt' && <BaconHuntGame onBack={() => setSelectedGame(null)} />}
       </>
     )
   }
@@ -34,41 +28,20 @@ export default function GamesSection() {
         </div>
 
         {/* Games Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <GameButton
-            emoji="🎈"
-            title="TAP POP"
-            description="Pop balloons as fast as you can!"
-            onClick={() => setSelectedGame('tappop')}
-            bgColor="from-red-400 to-pink-400"
-          />
-          <GameButton
-            emoji="🌈"
-            title="COLOR MATCH"
-            description="Match the colors!"
-            onClick={() => setSelectedGame('colormatch')}
-            bgColor="from-yellow-400 to-blue-400"
-          />
-          <GameButton
-            emoji="🔷"
-            title="SHAPE HUNT"
-            description="Find the shapes!"
-            onClick={() => setSelectedGame('shapehunt')}
-            bgColor="from-purple-400 to-pink-400"
+            emoji="🥓"
+            title="BACON HUNT"
+            description="Eat gummy bears & defeat bosses!"
+            onClick={() => setSelectedGame('baconhunt')}
+            bgColor="from-orange-400 to-yellow-400"
           />
           <GameButton
             emoji="🎨"
-            title="PATTERN"
-            description="Copy the pattern!"
+            title="PATTERN GAME"
+            description="Remember and repeat the patterns!"
             onClick={() => setSelectedGame('pattern')}
             bgColor="from-green-400 to-blue-400"
-          />
-          <GameButton
-            emoji="🫧"
-            title="BUBBLE POP"
-            description="Pop all the bubbles!"
-            onClick={() => setSelectedGame('bubblepop')}
-            bgColor="from-cyan-400 to-purple-400"
           />
         </div>
 

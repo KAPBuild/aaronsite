@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
     "autoprefixer": "^10.4.23",
     "axios": "^1.13.2",
     "canvas-confetti": "^1.9.4",
@@ -17,6 +19,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tailwindcss": "^3.4.19",
+    "three": "^0.182.0",
     "tone": "^14.9.17"
   },
   "devDependencies": {
