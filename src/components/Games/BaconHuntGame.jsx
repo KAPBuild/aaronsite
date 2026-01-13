@@ -128,6 +128,7 @@ function GummyBear({ bear, onCollect, speed }) {
   useFrame(() => {
     if (meshRef.current) {
       meshRef.current.position.set(bear.x, bear.y, bear.z);
+      meshRef.current.rotation.y += 0.02;
     }
   });
 
@@ -147,8 +148,19 @@ function GummyBear({ bear, onCollect, speed }) {
 
 // Rare chocolate component
 function Chocolate({ chocolate }) {
+  const meshRef = useRef();
+
+  useFrame(() => {
+    if (meshRef.current) {
+      meshRef.current.position.set(chocolate.x, chocolate.y, chocolate.z);
+      meshRef.current.rotation.x += 0.02;
+      meshRef.current.rotation.y += 0.03;
+    }
+  });
+
   return (
     <mesh
+      ref={meshRef}
       position={[chocolate.x, chocolate.y, chocolate.z]}
       castShadow
       receiveShadow
@@ -167,6 +179,7 @@ function Boss({ boss, onDamage, speed }) {
   useFrame(() => {
     if (groupRef.current) {
       groupRef.current.position.set(boss.x, boss.y, boss.z);
+      groupRef.current.rotation.y += 0.01;
     }
   });
 
@@ -208,6 +221,7 @@ function BigBoss({ boss }) {
   useFrame(() => {
     if (groupRef.current) {
       groupRef.current.position.set(boss.x, boss.y, boss.z);
+      groupRef.current.rotation.y += 0.005;
     }
   });
 
