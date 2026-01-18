@@ -1,0 +1,13 @@
+name = "aaronsite-api"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "aaronsite-db"
+database_id = "37d85ea2-8cc9-400a-86f6-7a97e0d1e715"
+
+# CORS headers for your React site
+[vars]
+ALLOWED_ORIGIN = "https://aaronsite.pages.dev"

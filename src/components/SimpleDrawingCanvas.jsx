@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { playPopSound, playClickSound } from '../utils/sounds'
+import { saveDrawing as saveToCloud, getDrawings, getDrawing, deleteDrawing, canvasToDataURL, createThumbnail } from '../utils/storage'
 
 export default function SimpleDrawingCanvas() {
   const canvasRef = useRef(null)
@@ -12,6 +13,12 @@ export default function SimpleDrawingCanvas() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const contextRef = useRef(null)
   const [startPos, setStartPos] = useState(null)
+
+  // Cloud storage states
+  const [showGallery, setShowGallery] = useState(false)
+  const [savedDrawings, setSavedDrawings] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [saveMessage, setSaveMessage] = useState('')
 
   // Initialize canvas
   useEffect(() => {
@@ -203,6 +210,93 @@ export default function SimpleDrawingCanvas() {
     await playPopSound()
   }
 
+  // Save drawing to cloud
+  const saveDrawingToCloud = async () => {
+    const drawingName = prompt('Enter a name for your drawing:')
+    if (!drawingName) return
+
+    setIsLoading(true)
+    setSaveMessage('')
+
+    try {
+      const canvas = canvasRef.current
+      const imageData = canvasToDataURL(canvas)
+      const thumbnailData = createThumbnail(canvas)
+
+      await saveToCloud(drawingName, imageData, thumbnailData)
+      await playPopSound()
+      setSaveMessage('✅ Drawing saved to cloud!')
+      setTimeout(() => setSaveMessage(''), 3000)
+    } catch (error) {
+      console.error('Failed to save drawing:', error)
+      setSaveMessage('❌ Failed to save. Try again.')
+      setTimeout(() => setSaveMessage(''), 3000)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Load saved drawings gallery
+  const loadGallery = async () => {
+    setIsLoading(true)
+    setShowGallery(true)
+
+    try {
+      const { drawings } = await getDrawings()
+      setSavedDrawings(drawings)
+    } catch (error) {
+      console.error('Failed to load gallery:', error)
+      setSavedDrawings([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Load a specific drawing
+  const loadDrawing = async (id) => {
+    setIsLoading(true)
+
+    try {
+      const { drawing } = await getDrawing(id)
+      const canvas = canvasRef.current
+      const context = contextRef.current
+      const img = new Image()
+
+      img.onload = () => {
+        context.clearRect(0, 0, canvas.width, canvas.height)
+        context.drawImage(img, 0, 0)
+        saveToHistory(canvas)
+        setShowGallery(false)
+        playPopSound()
+      }
+
+      img.src = drawing.image_data
+    } catch (error) {
+      console.error('Failed to load drawing:', error)
+      alert('Failed to load drawing')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Delete a drawing
+  const handleDeleteDrawing = async (id) => {
+    if (!confirm('Delete this drawing?')) return
+
+    setIsLoading(true)
+
+    try {
+      await deleteDrawing(id)
+      await loadGallery() // Refresh gallery
+      await playPopSound()
+    } catch (error) {
+      console.error('Failed to delete drawing:', error)
+      alert('Failed to delete drawing')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const COLORS = ['#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080', '#FFC0CB']
 
   const toolButtonClass = (toolName) => `
@@ -284,7 +378,9 @@ export default function SimpleDrawingCanvas() {
               <button onClick={undo} className="bg-slate-700 hover:bg-slate-600 text-cyan-300 px-3 py-1 rounded text-sm">↶ Undo</button>
               <button onClick={redo} className="bg-slate-700 hover:bg-slate-600 text-cyan-300 px-3 py-1 rounded text-sm">↷ Redo</button>
               <button onClick={clearCanvas} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-bold">Clear</button>
-              <button onClick={saveDrawing} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-bold">Save</button>
+              <button onClick={saveDrawing} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-bold">💾 Save</button>
+              <button onClick={saveDrawingToCloud} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-bold disabled:opacity-50">☁️ Cloud</button>
+              <button onClick={loadGallery} disabled={isLoading} className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm font-bold disabled:opacity-50">🖼️ Gallery</button>
             </div>
           </div>
         </div>
@@ -368,13 +464,22 @@ export default function SimpleDrawingCanvas() {
           <button onClick={redo} className="bg-slate-600 hover:bg-slate-500 text-cyan-300 px-3 py-2 rounded font-semibold text-sm">↷ Redo</button>
           <button onClick={clearCanvas} className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded font-bold text-sm">🗑️ Clear</button>
           <button onClick={saveDrawing} className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded font-bold text-sm">💾 Save</button>
+          <button onClick={saveDrawingToCloud} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded font-bold text-sm disabled:opacity-50">☁️ Save to Cloud</button>
+          <button onClick={loadGallery} disabled={isLoading} className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded font-bold text-sm disabled:opacity-50">🖼️ Gallery</button>
           <button
             onClick={() => setIsFullscreen(true)}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded font-bold text-sm"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded font-bold text-sm"
           >
             ⛶ Fullscreen
           </button>
         </div>
+
+        {/* Save Message */}
+        {saveMessage && (
+          <div className={`text-center p-2 rounded font-bold ${saveMessage.includes('✅') ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+            {saveMessage}
+          </div>
+        )}
       </div>
 
       {/* Canvas */}
@@ -396,6 +501,67 @@ export default function SimpleDrawingCanvas() {
       <div className="text-center text-sm text-cyan-300 font-semibold">
         Choose a tool and start drawing! Use the fullscreen button for more space.
       </div>
+
+      {/* Gallery Modal */}
+      {showGallery && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={() => setShowGallery(false)}>
+          <div className="bg-slate-800 rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-cyan-300">🖼️ Saved Drawings</h2>
+              <button onClick={() => setShowGallery(false)} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold">
+                ✕ Close
+              </button>
+            </div>
+
+            {isLoading ? (
+              <div className="text-center text-cyan-300 text-lg py-8">Loading...</div>
+            ) : savedDrawings.length === 0 ? (
+              <div className="text-center text-cyan-300 text-lg py-8">No saved drawings yet. Create and save one!</div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {savedDrawings.map((drawing) => (
+                  <div key={drawing.id} className="bg-slate-700 rounded-lg p-3 hover:bg-slate-600 transition">
+                    {/* Thumbnail */}
+                    <div className="aspect-square bg-white rounded mb-2 overflow-hidden cursor-pointer" onClick={() => loadDrawing(drawing.id)}>
+                      {drawing.thumbnail_data ? (
+                        <img src={drawing.thumbnail_data} alt={drawing.name} className="w-full h-full object-contain" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">No preview</div>
+                      )}
+                    </div>
+
+                    {/* Name */}
+                    <div className="text-cyan-300 font-semibold text-sm mb-2 truncate" title={drawing.name}>
+                      {drawing.name}
+                    </div>
+
+                    {/* Date */}
+                    <div className="text-gray-400 text-xs mb-2">
+                      {new Date(drawing.created_at).toLocaleDateString()}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => loadDrawing(drawing.id)}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-bold"
+                      >
+                        Load
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDrawing(drawing.id)}
+                        className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-bold"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
