@@ -52,46 +52,48 @@ export default function HotWheelsGallery() {
         </div>
 
         {/* Add Car */}
-        <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl p-4 sm:p-6 md:p-8 mb-6 md:mb-8 border-4 md:border-8 border-orange-400">
+        <div className="mb-6 md:mb-8">
           {!showForm ? (
             <button
               onClick={() => setShowForm(true)}
-              className="w-full px-6 py-4 md:px-8 md:py-6 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xl sm:text-2xl md:text-3xl font-black rounded-xl md:rounded-2xl hover:scale-105 active:scale-95 transition-all border-2 md:border-4 border-orange-600 shadow-lg"
+              className="px-4 py-2 md:px-6 md:py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm md:text-base font-bold rounded-lg hover:scale-105 active:scale-95 transition-all shadow-md"
             >
-              ➕ ADD CAR ➕
+              ➕ Add Car
             </button>
           ) : (
-            <div className="space-y-3 md:space-y-4">
-              <h2 className="text-xl md:text-2xl font-black text-orange-600 mb-3 md:mb-4">📸 Add Your Car!</h2>
+            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 border-2 border-orange-300">
+              <div className="space-y-3 md:space-y-4">
+                <h2 className="text-lg md:text-xl font-black text-orange-600">📸 Add Your Car!</h2>
 
-              <div>
-                <label className="block text-base md:text-lg font-black text-gray-700 mb-2">Car Name:</label>
-                <input
-                  type="text"
-                  value={carName}
-                  onChange={(e) => setCarName(e.target.value)}
-                  placeholder="e.g., Red Speed Demon"
-                  className="w-full px-3 py-2 md:px-4 md:py-3 border-2 md:border-4 border-orange-300 rounded-lg md:rounded-xl focus:outline-none focus:border-orange-500 text-base md:text-lg font-bold"
-                />
+                <div>
+                  <label className="block text-sm md:text-base font-bold text-gray-700 mb-2">Car Name:</label>
+                  <input
+                    type="text"
+                    value={carName}
+                    onChange={(e) => setCarName(e.target.value)}
+                    placeholder="e.g., Red Speed Demon"
+                    className="w-full px-3 py-2 border-2 border-orange-300 rounded-lg focus:outline-none focus:border-orange-500 text-sm md:text-base font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm md:text-base font-bold text-gray-700 mb-2">📷 Upload Photo:</label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="w-full px-3 py-2 border-2 border-orange-300 rounded-lg bg-yellow-50 font-medium text-sm"
+                  />
+                </div>
+
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-bold text-sm rounded-lg shadow-md"
+                >
+                  Cancel
+                </button>
               </div>
-
-              <div>
-                <label className="block text-base md:text-lg font-black text-gray-700 mb-2">📷 Upload Photo:</label>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="w-full px-3 py-2 md:px-4 md:py-3 border-2 md:border-4 border-orange-300 rounded-lg md:rounded-xl bg-yellow-50 font-bold text-sm md:text-base"
-                />
-              </div>
-
-              <button
-                onClick={() => setShowForm(false)}
-                className="w-full px-4 py-2 md:px-6 md:py-3 bg-gray-500 hover:bg-gray-600 text-white font-black text-lg md:text-xl rounded-lg md:rounded-xl border-2 md:border-4 border-gray-600 shadow-lg"
-              >
-                Cancel
-              </button>
             </div>
           )}
         </div>
