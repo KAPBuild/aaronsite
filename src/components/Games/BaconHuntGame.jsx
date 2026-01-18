@@ -6,12 +6,13 @@ import * as THREE from 'three';
 
 // Game state manager
 const gameStateRef = {
-  player: { x: 0, y: 0.075, z: 0, sizeScale: 1 },
+  player: { x: 0, y: 0.075, z: 0, sizeScale: 1, lastHitTime: 0 },
   gummyBears: [],
   chocolates: [],
   bosses: [],
   bossesDefeated: 0,
   bigBoss: null,
+  yellowBoss: null,
   chocolatesCollected: 0,
   keys: {},
   score: 0,
@@ -28,16 +29,17 @@ const gameStateRef = {
 
 // Reset game state
 const resetGameState = () => {
-  gameStateRef.player = { x: 0, y: 0.075, z: 0, sizeScale: 1 };
+  gameStateRef.player = { x: 0, y: 0.075, z: 0, sizeScale: 1, lastHitTime: 0 };
   gameStateRef.gummyBears = [];
   gameStateRef.chocolates = [];
   gameStateRef.bosses = [
-    { id: 1, x: -2.5, y: 0.125, z: -1.5, health: 5, maxHealth: 5, vx: 0.02, vz: 0.01 },
-    { id: 2, x: 3, y: 0.125, z: 1.5, health: 5, maxHealth: 5, vx: -0.02, vz: -0.015 },
-    { id: 3, x: 0, y: 0.125, z: -2.5, health: 5, maxHealth: 5, vx: 0.015, vz: 0.02 },
+    { id: 1, x: -2.5, y: 0.125, z: -1.5, health: 5, maxHealth: 5, vx: 0.02, vz: 0.01, lastHitTime: 0 },
+    { id: 2, x: 3, y: 0.125, z: 1.5, health: 5, maxHealth: 5, vx: -0.02, vz: -0.015, lastHitTime: 0 },
+    { id: 3, x: 0, y: 0.125, z: -2.5, health: 5, maxHealth: 5, vx: 0.015, vz: 0.02, lastHitTime: 0 },
   ];
   gameStateRef.bossesDefeated = 0;
   gameStateRef.bigBoss = null;
+  gameStateRef.yellowBoss = null;
   gameStateRef.chocolatesCollected = 0;
   gameStateRef.score = 0;
   gameStateRef.joystick = {
@@ -233,7 +235,54 @@ function Boss({ boss, onDamage, speed }) {
   );
 }
 
-// Big Boss component (appears after defeating 2 regular bosses)
+// Yellow Boss component (appears after defeating 3 red bosses)
+function YellowBoss({ boss }) {
+  const groupRef = useRef();
+
+  useFrame(() => {
+    if (groupRef.current) {
+      groupRef.current.position.set(boss.x, boss.y, boss.z);
+      groupRef.current.rotation.y += 0.015;
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={[boss.x, boss.y, boss.z]} userData={{ type: 'yellowBoss', boss }}>
+      {/* Yellow Boss body - Medium size, faster than red */}
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[0.35, 0.35, 0.35]} />
+        <meshStandardMaterial color="#FFD700" metalness={0.4} roughness={0.5} emissive="#FFFF00" emissiveIntensity={0.3} />
+      </mesh>
+      {/* Left eye white */}
+      <mesh position={[-0.08, 0.08, 0.18]} castShadow>
+        <boxGeometry args={[0.08, 0.08, 0.02]} />
+        <meshStandardMaterial color="#FFFFFF" />
+      </mesh>
+      {/* Right eye white */}
+      <mesh position={[0.08, 0.08, 0.18]} castShadow>
+        <boxGeometry args={[0.08, 0.08, 0.02]} />
+        <meshStandardMaterial color="#FFFFFF" />
+      </mesh>
+      {/* Left pupil */}
+      <mesh position={[-0.08, 0.08, 0.19]} castShadow>
+        <boxGeometry args={[0.03, 0.03, 0.01]} />
+        <meshStandardMaterial color="#000000" />
+      </mesh>
+      {/* Right pupil */}
+      <mesh position={[0.08, 0.08, 0.19]} castShadow>
+        <boxGeometry args={[0.03, 0.03, 0.01]} />
+        <meshStandardMaterial color="#000000" />
+      </mesh>
+      {/* Angry mouth */}
+      <mesh position={[0, -0.06, 0.18]} castShadow>
+        <boxGeometry args={[0.15, 0.06, 0.02]} />
+        <meshStandardMaterial color="#000000" />
+      </mesh>
+    </group>
+  );
+}
+
+// Big Boss component (appears after defeating yellow boss)
 function BigBoss({ boss }) {
   const groupRef = useRef();
 
@@ -382,6 +431,7 @@ function GameScene({ gameState, setGameState, setScore, isPlaying }) {
     }
 
     // Collision with bosses
+    const currentTime = Date.now();
     for (let i = state.bosses.length - 1; i >= 0; i--) {
       const boss = state.bosses[i];
       const dist = Math.hypot(
@@ -389,7 +439,9 @@ function GameScene({ gameState, setGameState, setScore, isPlaying }) {
         state.player.z - boss.z
       );
 
-      if (dist < 0.2) {
+      // Only hit if cooldown expired (500ms between hits)
+      if (dist < 0.2 && currentTime - boss.lastHitTime > 500) {
+        boss.lastHitTime = currentTime;
         boss.health--;
         // Grow when eating boss (+10% size per hit)
         state.player.sizeScale += 0.1;
@@ -399,19 +451,62 @@ function GameScene({ gameState, setGameState, setScore, isPlaying }) {
           state.bossesDefeated++;
           state.bosses.splice(i, 1);
 
-          if (state.bossesDefeated === 3 && !state.bigBoss) {
-            // Spawn the big boss in the center
-            state.bigBoss = {
-              id: 'bigboss',
+          if (state.bossesDefeated === 3 && !state.yellowBoss) {
+            // Spawn the yellow boss in the center
+            state.yellowBoss = {
+              id: 'yellowboss',
               x: 0,
               y: 0.25,
               z: 0,
-              health: 10,
-              maxHealth: 10,
-              vx: 0,
-              vz: 0,
+              health: 8,
+              maxHealth: 8,
+              vx: 0.025,
+              vz: 0.02,
+              lastHitTime: 0,
             };
           }
+        }
+      }
+    }
+
+    // Yellow boss movement (faster than red bosses)
+    if (state.yellowBoss) {
+      state.yellowBoss.x += state.yellowBoss.vx;
+      state.yellowBoss.z += state.yellowBoss.vz;
+
+      if (state.yellowBoss.x <= -3.8 || state.yellowBoss.x >= 3.8) state.yellowBoss.vx *= -1;
+      if (state.yellowBoss.z <= -2.8 || state.yellowBoss.z >= 2.8) state.yellowBoss.vz *= -1;
+    }
+
+    // Collision with yellow boss
+    if (state.yellowBoss) {
+      const dist = Math.hypot(
+        state.player.x - state.yellowBoss.x,
+        state.player.z - state.yellowBoss.z
+      );
+
+      // Only hit if cooldown expired (500ms between hits)
+      if (dist < 0.3 && currentTime - state.yellowBoss.lastHitTime > 500) {
+        state.yellowBoss.lastHitTime = currentTime;
+        state.yellowBoss.health--;
+        // Grow when eating yellow boss (+12% size per hit)
+        state.player.sizeScale += 0.12;
+
+        if (state.yellowBoss.health <= 0) {
+          playWinSound();
+          state.yellowBoss = null;
+          // Spawn big boss after yellow boss
+          state.bigBoss = {
+            id: 'bigboss',
+            x: 0,
+            y: 0.25,
+            z: 0,
+            health: 10,
+            maxHealth: 10,
+            vx: 0,
+            vz: 0,
+            lastHitTime: 0,
+          };
         }
       }
     }
@@ -423,7 +518,9 @@ function GameScene({ gameState, setGameState, setScore, isPlaying }) {
         state.player.z - state.bigBoss.z
       );
 
-      if (dist < 0.35) {
+      // Only hit if cooldown expired (500ms between hits)
+      if (dist < 0.35 && currentTime - state.bigBoss.lastHitTime > 500) {
+        state.bigBoss.lastHitTime = currentTime;
         state.bigBoss.health--;
         // Grow when eating big boss (+15% size per hit - bigger growth)
         state.player.sizeScale += 0.15;
@@ -493,6 +590,9 @@ function GameScene({ gameState, setGameState, setScore, isPlaying }) {
         <Boss key={boss.id} boss={boss} speed={0.04} />
       ))}
 
+      {/* Yellow Boss */}
+      {gameStateRef.yellowBoss && <YellowBoss boss={gameStateRef.yellowBoss} />}
+
       {/* Big Boss */}
       {gameStateRef.bigBoss && <BigBoss boss={gameStateRef.bigBoss} />}
     </>
@@ -517,12 +617,16 @@ const BaconHuntGame = ({ onBack }) => {
     e.preventDefault();
     const touch = e.touches[0];
     const rect = e.currentTarget.getBoundingClientRect();
+    const touchX = touch.clientX - rect.left;
 
-    gameStateRef.joystick.active = true;
-    gameStateRef.joystick.centerX = touch.clientX - rect.left;
-    gameStateRef.joystick.centerY = touch.clientY - rect.top;
-    gameStateRef.joystick.currentX = gameStateRef.joystick.centerX;
-    gameStateRef.joystick.currentY = gameStateRef.joystick.centerY;
+    // Only activate joystick if touch is on right half of screen
+    if (touchX > rect.width / 2) {
+      gameStateRef.joystick.active = true;
+      gameStateRef.joystick.centerX = touchX;
+      gameStateRef.joystick.centerY = touch.clientY - rect.top;
+      gameStateRef.joystick.currentX = gameStateRef.joystick.centerX;
+      gameStateRef.joystick.currentY = gameStateRef.joystick.centerY;
+    }
   };
 
   const handleTouchMove = (e) => {
@@ -611,12 +715,12 @@ const BaconHuntGame = ({ onBack }) => {
               <div className="bg-yellow-50 border-4 border-orange-400 rounded-lg p-6">
                 <p className="text-lg font-bold mb-4 text-gray-800">How to Play:</p>
                 <ul className="text-left space-y-2 text-gray-700">
-                  <li>{isMobile ? '🕹️ Touch and drag anywhere to move' : '🎮 Use WASD or Arrow Keys to move'}</li>
+                  <li>{isMobile ? '🕹️ Touch RIGHT side and drag to move' : '🎮 Use WASD or Arrow Keys to move'}</li>
                   <li>🍬 Eat colorful gummy bears (+10 points each)</li>
                   <li>🍫 Collect rare chocolates to grow BIG! (+50 points, +40% size)</li>
-                  <li>🔴 Run into red boss enemies to damage them (5 hits each, +10% size per hit)</li>
-                  <li>⭐ Defeat all 3 bosses to reveal the BIG BOSS!</li>
-                  <li>⚔️ Defeat the BIG BOSS (10 hits, +15% size per hit) to win!</li>
+                  <li>🔴 Defeat 3 red bosses (5 hits, +10% size per hit)</li>
+                  <li>💛 Defeat the YELLOW BOSS (8 hits, faster, +12% size per hit)</li>
+                  <li>⚔️ Defeat the BIG BOSS (10 hits, +15% size per hit) to WIN!</li>
                   <li>🎥 Watch the camera follow you in 3D!</li>
                 </ul>
               </div>
@@ -635,7 +739,7 @@ const BaconHuntGame = ({ onBack }) => {
                 ref={gameContainerRef}
                 style={{
                   width: '100%',
-                  height: '600px',
+                  height: isMobile ? 'min(500px, 70vh)' : '600px',
                   borderRadius: '0.5rem',
                   overflow: 'hidden',
                   border: '4px solid #FF9900',
@@ -685,23 +789,30 @@ const BaconHuntGame = ({ onBack }) => {
                   </div>
                 )}
 
-                {/* HUD Overlay */}
-                <div style={{ position: 'absolute', top: '20px', left: '20px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '15px 20px', borderRadius: '8px', color: 'white' }}>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '5px 0' }}>🍬 Gummy Bears: {gameStateRef.gummyBears.length}</p>
-                  <p style={{ fontSize: '22px', fontWeight: 'bold', margin: '5px 0', color: '#D2691E' }}>🍫 Chocolates: {gameStateRef.chocolatesCollected}</p>
-                  <p style={{ fontSize: '18px', fontWeight: 'bold', margin: '5px 0', color: '#FFD700' }}>📏 Size: {(gameStateRef.player.sizeScale * 100).toFixed(0)}%</p>
-                  <p style={{ fontSize: '20px', fontWeight: 'bold', margin: '5px 0' }}>Score: {score}</p>
+                {/* HUD Overlay - Left Side */}
+                <div style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '8px 12px', borderRadius: '6px', color: 'white' }}>
+                  <p style={{ fontSize: '14px', fontWeight: 'bold', margin: '2px 0' }}>🍬 {gameStateRef.gummyBears.length}</p>
+                  <p style={{ fontSize: '14px', fontWeight: 'bold', margin: '2px 0', color: '#D2691E' }}>🍫 {gameStateRef.chocolatesCollected}</p>
+                  <p style={{ fontSize: '14px', fontWeight: 'bold', margin: '2px 0', color: '#FFD700' }}>📏 {(gameStateRef.player.sizeScale * 100).toFixed(0)}%</p>
+                  <p style={{ fontSize: '14px', fontWeight: 'bold', margin: '2px 0' }}>⭐ {score}</p>
                 </div>
-                <div style={{ position: 'absolute', top: '20px', right: '20px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '15px 20px', borderRadius: '8px', color: 'white', textAlign: 'center' }}>
+
+                {/* HUD Overlay - Right Side (Boss Info) */}
+                <div style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '8px 12px', borderRadius: '6px', color: 'white', textAlign: 'center' }}>
                   {gameStateRef.bigBoss ? (
                     <>
-                      <p style={{ fontSize: '18px', fontWeight: 'bold', margin: '5px 0', color: '#FF0000' }}>⚔️ BIG BOSS!</p>
-                      <p style={{ fontSize: '20px', fontWeight: 'bold', margin: '5px 0', color: '#FFD700' }}>❤️ {gameStateRef.bigBoss.health} / {gameStateRef.bigBoss.maxHealth}</p>
+                      <p style={{ fontSize: '14px', fontWeight: 'bold', margin: '2px 0', color: '#8B0000' }}>⚔️ BIG BOSS</p>
+                      <p style={{ fontSize: '16px', fontWeight: 'bold', margin: '2px 0', color: '#FFD700' }}>❤️ {gameStateRef.bigBoss.health}/{gameStateRef.bigBoss.maxHealth}</p>
+                    </>
+                  ) : gameStateRef.yellowBoss ? (
+                    <>
+                      <p style={{ fontSize: '14px', fontWeight: 'bold', margin: '2px 0', color: '#FFD700' }}>💛 YELLOW BOSS</p>
+                      <p style={{ fontSize: '16px', fontWeight: 'bold', margin: '2px 0', color: '#FFD700' }}>❤️ {gameStateRef.yellowBoss.health}/{gameStateRef.yellowBoss.maxHealth}</p>
                     </>
                   ) : (
                     <>
-                      <p style={{ fontSize: '18px', fontWeight: 'bold', margin: '5px 0' }}>🔴 BOSSES</p>
-                      <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '5px 0' }}>{gameStateRef.bossesDefeated} / 3</p>
+                      <p style={{ fontSize: '14px', fontWeight: 'bold', margin: '2px 0' }}>🔴 BOSSES</p>
+                      <p style={{ fontSize: '18px', fontWeight: 'bold', margin: '2px 0' }}>{gameStateRef.bossesDefeated}/3</p>
                     </>
                   )}
                 </div>
@@ -715,7 +826,8 @@ const BaconHuntGame = ({ onBack }) => {
               <h2 className="text-4xl font-black text-orange-600">YOU WON!</h2>
               <div className="bg-yellow-50 border-4 border-orange-400 rounded-lg p-6">
                 <p className="text-3xl font-bold text-orange-600 mb-2">Final Score: {score}</p>
-                <p className="text-lg text-gray-700">Bosses Defeated: 3/3 ✓</p>
+                <p className="text-lg text-gray-700">Red Bosses Defeated: 3/3 ✓</p>
+                <p className="text-lg text-gray-700">Yellow Boss Defeated ✓</p>
                 <p className="text-lg text-gray-700">Big Boss Defeated ✓</p>
               </div>
               <button
