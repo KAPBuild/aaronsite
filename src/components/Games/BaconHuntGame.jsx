@@ -15,6 +15,15 @@ const gameStateRef = {
   chocolatesCollected: 0,
   keys: {},
   score: 0,
+  joystick: {
+    active: false,
+    centerX: 0,
+    centerY: 0,
+    currentX: 0,
+    currentY: 0,
+    deltaX: 0,
+    deltaY: 0,
+  },
 };
 
 // Reset game state
@@ -30,6 +39,15 @@ const resetGameState = () => {
   gameStateRef.bigBoss = null;
   gameStateRef.chocolatesCollected = 0;
   gameStateRef.score = 0;
+  gameStateRef.joystick = {
+    active: false,
+    centerX: 0,
+    centerY: 0,
+    currentX: 0,
+    currentY: 0,
+    deltaX: 0,
+    deltaY: 0,
+  };
 
   // Spawn initial gummy bears
   for (let i = 0; i < 8; i++) {
@@ -275,11 +293,22 @@ function GameScene({ gameState, setGameState, setScore, isPlaying }) {
     const speed = 0.08;
     const state = gameStateRef;
 
-    // Player movement
-    if (state.keys['w'] || state.keys['arrowup']) state.player.z -= speed;
-    if (state.keys['s'] || state.keys['arrowdown']) state.player.z += speed;
-    if (state.keys['a'] || state.keys['arrowleft']) state.player.x -= speed;
-    if (state.keys['d'] || state.keys['arrowright']) state.player.x += speed;
+    // Joystick movement (mobile)
+    if (state.joystick.active) {
+      const maxRadius = 50;
+      const normalizedX = state.joystick.deltaX / maxRadius;
+      const normalizedZ = state.joystick.deltaY / maxRadius;
+
+      state.player.x += normalizedX * speed;
+      state.player.z += normalizedZ * speed;
+    }
+    // Keyboard movement (desktop) - only if joystick not active
+    else {
+      if (state.keys['w'] || state.keys['arrowup']) state.player.z -= speed;
+      if (state.keys['s'] || state.keys['arrowdown']) state.player.z += speed;
+      if (state.keys['a'] || state.keys['arrowleft']) state.player.x -= speed;
+      if (state.keys['d'] || state.keys['arrowright']) state.player.x += speed;
+    }
 
     // Boundary checking
     state.player.x = Math.max(-3.9, Math.min(3.9, state.player.x));
@@ -467,6 +496,59 @@ function GameScene({ gameState, setGameState, setScore, isPlaying }) {
 const BaconHuntGame = ({ onBack }) => {
   const [gameState, setGameState] = useState('start');
   const [score, setScore] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const gameContainerRef = useRef();
+
+  // Detect touch support
+  useEffect(() => {
+    const checkMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    setIsMobile(checkMobile);
+  }, []);
+
+  // Touch event handlers for joystick
+  const handleTouchStart = (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    gameStateRef.joystick.active = true;
+    gameStateRef.joystick.centerX = touch.clientX - rect.left;
+    gameStateRef.joystick.centerY = touch.clientY - rect.top;
+    gameStateRef.joystick.currentX = gameStateRef.joystick.centerX;
+    gameStateRef.joystick.currentY = gameStateRef.joystick.centerY;
+  };
+
+  const handleTouchMove = (e) => {
+    e.preventDefault();
+    if (!gameStateRef.joystick.active) return;
+
+    const touch = e.touches[0];
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    gameStateRef.joystick.currentX = touch.clientX - rect.left;
+    gameStateRef.joystick.currentY = touch.clientY - rect.top;
+
+    // Calculate delta (clamped to joystick radius)
+    const dx = gameStateRef.joystick.currentX - gameStateRef.joystick.centerX;
+    const dy = gameStateRef.joystick.currentY - gameStateRef.joystick.centerY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const maxRadius = 50; // pixels
+
+    if (distance > maxRadius) {
+      gameStateRef.joystick.deltaX = (dx / distance) * maxRadius;
+      gameStateRef.joystick.deltaY = (dy / distance) * maxRadius;
+    } else {
+      gameStateRef.joystick.deltaX = dx;
+      gameStateRef.joystick.deltaY = dy;
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    e.preventDefault();
+    gameStateRef.joystick.active = false;
+    gameStateRef.joystick.deltaX = 0;
+    gameStateRef.joystick.deltaY = 0;
+  };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -522,7 +604,7 @@ const BaconHuntGame = ({ onBack }) => {
               <div className="bg-yellow-50 border-4 border-orange-400 rounded-lg p-6">
                 <p className="text-lg font-bold mb-4 text-gray-800">How to Play:</p>
                 <ul className="text-left space-y-2 text-gray-700">
-                  <li>🎮 Use WASD or Arrow Keys to move</li>
+                  <li>{isMobile ? '🕹️ Touch and drag anywhere to move' : '🎮 Use WASD or Arrow Keys to move'}</li>
                   <li>🍬 Eat colorful gummy bears (+10 points each)</li>
                   <li>🍫 Collect rare chocolates to grow BIG! (+50 points, +40% size)</li>
                   <li>🔴 Run into red boss enemies to damage them (5 hits each)</li>
@@ -542,13 +624,60 @@ const BaconHuntGame = ({ onBack }) => {
 
           {gameState === 'playing' && (
             <div className="space-y-4">
-              <div style={{ width: '100%', height: '600px', borderRadius: '0.5rem', overflow: 'hidden', border: '4px solid #FF9900', position: 'relative' }}>
+              <div
+                ref={gameContainerRef}
+                style={{
+                  width: '100%',
+                  height: '600px',
+                  borderRadius: '0.5rem',
+                  overflow: 'hidden',
+                  border: '4px solid #FF9900',
+                  position: 'relative',
+                  touchAction: 'none',
+                }}
+                onTouchStart={isMobile ? handleTouchStart : undefined}
+                onTouchMove={isMobile ? handleTouchMove : undefined}
+                onTouchEnd={isMobile ? handleTouchEnd : undefined}
+              >
                 <Canvas
                   camera={{ position: [0, 5, 10], fov: 75 }}
                   gl={{ antialias: true, shadowMap: { enabled: true } }}
                 >
                   <GameScene gameState={gameState} setGameState={setGameState} setScore={setScore} isPlaying={gameState === 'playing'} />
                 </Canvas>
+
+                {/* Virtual Joystick */}
+                {isMobile && gameStateRef.joystick.active && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: gameStateRef.joystick.centerX - 60,
+                      top: gameStateRef.joystick.centerY - 60,
+                      width: 120,
+                      height: 120,
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                      border: '3px solid rgba(255, 255, 255, 0.5)',
+                      pointerEvents: 'none',
+                      zIndex: 1000,
+                    }}
+                  >
+                    {/* Inner dot showing current position */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: gameStateRef.joystick.deltaX + 60 - 15,
+                        top: gameStateRef.joystick.deltaY + 60 - 15,
+                        width: 30,
+                        height: 30,
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                        border: '2px solid rgba(0, 0, 0, 0.3)',
+                      }}
+                    />
+                  </div>
+                )}
+
                 {/* HUD Overlay */}
                 <div style={{ position: 'absolute', top: '20px', left: '20px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '15px 20px', borderRadius: '8px', color: 'white' }}>
                   <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '5px 0' }}>🍬 Gummy Bears: {gameStateRef.gummyBears.length}</p>
