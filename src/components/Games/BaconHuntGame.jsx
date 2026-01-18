@@ -34,6 +34,7 @@ const resetGameState = () => {
   gameStateRef.bosses = [
     { id: 1, x: -2.5, y: 0.125, z: -1.5, health: 5, maxHealth: 5, vx: 0.02, vz: 0.01 },
     { id: 2, x: 3, y: 0.125, z: 1.5, health: 5, maxHealth: 5, vx: -0.02, vz: -0.015 },
+    { id: 3, x: 0, y: 0.125, z: -2.5, health: 5, maxHealth: 5, vx: 0.015, vz: 0.02 },
   ];
   gameStateRef.bossesDefeated = 0;
   gameStateRef.bigBoss = null;
@@ -390,12 +391,15 @@ function GameScene({ gameState, setGameState, setScore, isPlaying }) {
 
       if (dist < 0.2) {
         boss.health--;
+        // Grow when eating boss (+10% size per hit)
+        state.player.sizeScale += 0.1;
+
         if (boss.health <= 0) {
           playWinSound();
           state.bossesDefeated++;
           state.bosses.splice(i, 1);
 
-          if (state.bossesDefeated === 2 && !state.bigBoss) {
+          if (state.bossesDefeated === 3 && !state.bigBoss) {
             // Spawn the big boss in the center
             state.bigBoss = {
               id: 'bigboss',
@@ -421,6 +425,9 @@ function GameScene({ gameState, setGameState, setScore, isPlaying }) {
 
       if (dist < 0.35) {
         state.bigBoss.health--;
+        // Grow when eating big boss (+15% size per hit - bigger growth)
+        state.player.sizeScale += 0.15;
+
         if (state.bigBoss.health <= 0) {
           playWinSound();
           state.bigBoss = null;
@@ -607,9 +614,9 @@ const BaconHuntGame = ({ onBack }) => {
                   <li>{isMobile ? '🕹️ Touch and drag anywhere to move' : '🎮 Use WASD or Arrow Keys to move'}</li>
                   <li>🍬 Eat colorful gummy bears (+10 points each)</li>
                   <li>🍫 Collect rare chocolates to grow BIG! (+50 points, +40% size)</li>
-                  <li>🔴 Run into red boss enemies to damage them (5 hits each)</li>
-                  <li>⭐ Defeat both bosses to reveal the BIG BOSS!</li>
-                  <li>⚔️ Defeat the BIG BOSS (10 hits) to win the game!</li>
+                  <li>🔴 Run into red boss enemies to damage them (5 hits each, +10% size per hit)</li>
+                  <li>⭐ Defeat all 3 bosses to reveal the BIG BOSS!</li>
+                  <li>⚔️ Defeat the BIG BOSS (10 hits, +15% size per hit) to win!</li>
                   <li>🎥 Watch the camera follow you in 3D!</li>
                 </ul>
               </div>
@@ -694,7 +701,7 @@ const BaconHuntGame = ({ onBack }) => {
                   ) : (
                     <>
                       <p style={{ fontSize: '18px', fontWeight: 'bold', margin: '5px 0' }}>🔴 BOSSES</p>
-                      <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '5px 0' }}>{gameStateRef.bossesDefeated} / 2</p>
+                      <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '5px 0' }}>{gameStateRef.bossesDefeated} / 3</p>
                     </>
                   )}
                 </div>
@@ -708,7 +715,8 @@ const BaconHuntGame = ({ onBack }) => {
               <h2 className="text-4xl font-black text-orange-600">YOU WON!</h2>
               <div className="bg-yellow-50 border-4 border-orange-400 rounded-lg p-6">
                 <p className="text-3xl font-bold text-orange-600 mb-2">Final Score: {score}</p>
-                <p className="text-lg text-gray-700">Bosses Defeated: 2/2 ✓</p>
+                <p className="text-lg text-gray-700">Bosses Defeated: 3/3 ✓</p>
+                <p className="text-lg text-gray-700">Big Boss Defeated ✓</p>
               </div>
               <button
                 onClick={handlePlayAgain}
